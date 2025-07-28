@@ -1,0 +1,10 @@
+services:
+  db:
+    image: postgres:17.5-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${TYPEORM_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${TYPEORM_PASSWORD:-postgres}
+      POSTGRES_DB: ${TYPEORM_DATABASE:-bookshelf}
+    ports:
+      - 5432:5432

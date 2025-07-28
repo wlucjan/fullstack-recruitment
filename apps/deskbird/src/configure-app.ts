@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
+import { ApplicationErrorFilter } from './common/application/application-error.filter';
 
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
@@ -83,6 +84,7 @@ export function configure(app: INestApplication) {
   setupSecurity(app, configService);
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalFilters(new ApplicationErrorFilter());
 
   const logger = app.get(Logger);
   app.useLogger(logger);

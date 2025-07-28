@@ -1,5 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { Role } from '../application/enums/role';
+import { Roles } from '../application/enums/role';
+import { User } from '../application/entities/user';
+import { Email } from '../application/value-objects/email';
+import { Role } from '../application/value-objects/role';
 
 @Entity('users')
 export class UserOrmEntity {
@@ -9,9 +12,22 @@ export class UserOrmEntity {
   @Column('text', { unique: true })
   email: string;
 
-  @Column({ enum: Role })
-  role: Role;
+  @Column({ enum: Roles })
+  role: Roles;
 
   @Column()
   passwordHash: string;
+
+  static fromDomain(user: User): UserOrmEntity {
+    const entity = new UserOrmEntity();
+    entity.id = user.id;
+    entity.email = user.email.value;
+    entity.role = user.role.value;
+    entity.passwordHash = user.passwordHash;
+    return entity;
+  }
+
+  toDomain(): User {
+    return User.create(Email.create(this.email), Role.create(this.role), this.passwordHash);
+  }
 }

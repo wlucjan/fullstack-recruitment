@@ -1,8 +1,8 @@
-export enum Role {
+export enum Roles {
   ADMIN = 'admin',
   USER = 'user',
 }
 
-export function isRole(role: string): role is Role {
-  return Object.values(Role).includes(role as Role);
+export function isRole(role: string): role is Roles {
+  return Object.values(Roles).includes(role as Roles);
 }

@@ -42,11 +42,14 @@ describe('Email', () => {
       { email1: 'TEST@EXAMPLE.COM', email2: 'test@example.com' },
       { email1: 'Test@Example.com', email2: 'test@example.com' },
       { email1: 'test@EXAMPLE.COM', email2: 'test@example.com' },
-    ])('should be case insensitive for $email1 and $email2', ({ email1, email2 }) => {
-      const emailObj1 = Email.create(email1);
-      const emailObj2 = Email.create(email2);
-      expect(emailObj1.equals(emailObj2)).toBe(true);
-    });
+    ])(
+      'should be case insensitive for $email1 and $email2',
+      ({ email1, email2 }) => {
+        const emailObj1 = Email.create(email1);
+        const emailObj2 = Email.create(email2);
+        expect(emailObj1.equals(emailObj2)).toBe(true);
+      },
+    );
   });
 
   describe('toString', () => {
@@ -55,4 +58,4 @@ describe('Email', () => {
       expect(email.toString()).toBe('test@example.com');
     });
   });
-}); 
+});

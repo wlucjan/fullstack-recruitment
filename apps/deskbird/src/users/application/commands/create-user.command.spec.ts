@@ -2,7 +2,10 @@ import { UserInMemoryRepository } from '../../infrastructure/user.in-memory.repo
 import { UserDto } from '../dto/user.dto';
 import { User } from '../entities/user';
 import { UserAlreadyExistsError } from '../errors/user-already-exists';
-import { CreateUserCommand, CreateUserHandler } from './create-user.command';
+import {
+  CreateUserCommand,
+  CreateUserCommandHandler,
+} from './create-user.command';
 import { Roles } from '../enums/role';
 import { Email } from '../value-objects/email';
 import { Role } from '../value-objects/role';
@@ -11,7 +14,7 @@ import { NoopPasswordService } from '../../../auth/infrastructure/services/noop.
 describe('CreateUserCommand', () => {
   const userRepository = new UserInMemoryRepository();
   const passwordService = new NoopPasswordService();
-  const handler = new CreateUserHandler(userRepository, passwordService);
+  const handler = new CreateUserCommandHandler(userRepository, passwordService);
 
   it('creates a new user', async () => {
     const command = new CreateUserCommand(

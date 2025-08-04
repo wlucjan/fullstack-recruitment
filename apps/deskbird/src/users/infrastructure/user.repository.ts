@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { UserWriteRepository } from '../application/entities/user.repository';
+import { UserRepository } from '../application/entities/user.repository';
 import { User as DomainUser } from '../application/entities/user';
 import { UserOrmEntity } from './user.entity';
 import { UserNotFoundError } from '../application/errors/user-not-found';
 import { UserAlreadyExistsError } from '../application/errors/user-already-exists';
 
 @Injectable()
-export class UserRepository implements UserWriteRepository {
+export class UserSqlRepository implements UserRepository {
   constructor(
     private readonly datasource: DataSource,
     @InjectRepository(UserOrmEntity)
@@ -32,11 +32,25 @@ export class UserRepository implements UserWriteRepository {
       },
     );
 
+    if (!savedUser) {
+      throw new Error('User not saved');
+    }
+
     return savedUser.toDomain();
   }
 
   async findById(id: string): Promise<DomainUser> {
     const entity = await this.repo.findOne({ where: { id } });
+
+    if (!entity) {
+      throw new UserNotFoundError();
+    }
+
+    return entity.toDomain();
+  }
+
+  async findByEmail(email: string): Promise<DomainUser> {
+    const entity = await this.repo.findOne({ where: { email } });
 
     if (!entity) {
       throw new UserNotFoundError();

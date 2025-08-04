@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { UserWriteRepository } from '../application/entities/user.repository';
+import { UserRepository } from '../application/entities/user.repository';
 import { User as DomainUser } from '../application/entities/user';
 import { UserNotFoundError } from '../application/errors/user-not-found';
 import { UserAlreadyExistsError } from '../application/errors/user-already-exists';
 
 @Injectable()
-export class UserInMemoryRepository implements UserWriteRepository {
+export class UserInMemoryRepository implements UserRepository {
   private users = new Map<string, DomainUser>();
 
   async create(user: DomainUser): Promise<DomainUser> {
@@ -24,6 +24,18 @@ export class UserInMemoryRepository implements UserWriteRepository {
 
   async findById(id: string): Promise<DomainUser> {
     const user = this.users.get(id);
+
+    if (!user) {
+      throw new UserNotFoundError();
+    }
+
+    return Promise.resolve(user);
+  }
+
+  async findByEmail(email: string): Promise<DomainUser> {
+    const user = Array.from(this.users.values()).find(
+      (u) => u.email.value === email,
+    );
 
     if (!user) {
       throw new UserNotFoundError();

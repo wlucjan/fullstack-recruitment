@@ -51,4 +51,4 @@ describe('Role', () => {
       expect(role.toString()).toBe('admin');
     });
   });
-}); 
+});

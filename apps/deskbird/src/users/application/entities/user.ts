@@ -33,4 +33,13 @@ export class User {
   ): User {
     return new User(crypto.randomUUID(), email, role, passwordHash);
   }
+
+  static fromPersistence(
+    id: string,
+    email: Email,
+    role: RoleValueObject,
+    passwordHash: string,
+  ): User {
+    return new User(id, email, role, passwordHash);
+  }
 }

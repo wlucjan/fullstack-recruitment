@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryColumn, Column } from 'typeorm';
 import { Roles } from '../application/enums/role';
 import { User } from '../application/entities/user';
 import { Email } from '../application/value-objects/email';
@@ -6,7 +6,7 @@ import { Role } from '../application/value-objects/role';
 
 @Entity('users')
 export class UserOrmEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('uuid')
   id: string;
 
   @Column('text', { unique: true })
@@ -28,6 +28,11 @@ export class UserOrmEntity {
   }
 
   toDomain(): User {
-    return User.create(Email.create(this.email), Role.create(this.role), this.passwordHash);
+    return User.fromPersistence(
+      this.id,
+      Email.create(this.email),
+      Role.create(this.role),
+      this.passwordHash,
+    );
   }
 }

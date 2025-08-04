@@ -2,20 +2,22 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserOrmEntity } from './infrastructure/user.entity';
 import { UsersController } from './api/users.controller';
-import { USER_WRITE_REPOSITORY } from './application/entities/user.repository';
-import { UserRepository } from './infrastructure/user.repository';
+import { USER_REPOSITORY } from './application/entities/user.repository';
+import { UserSqlRepository } from './infrastructure/user.repository';
 import { CreateUserCommandHandler } from './application/commands/create-user.command';
 import { CqrsModule } from '@nestjs/cqrs';
 import { AuthModule } from '../auth/auth.module';
+import { GetUserWithEmailQueryHandler } from './application/queries/get-user-with-email.query';
 
 @Module({
   imports: [CqrsModule, TypeOrmModule.forFeature([UserOrmEntity]), AuthModule],
   controllers: [UsersController],
   providers: [
     CreateUserCommandHandler,
+    GetUserWithEmailQueryHandler,
     {
-      provide: USER_WRITE_REPOSITORY,
-      useClass: UserRepository,
+      provide: USER_REPOSITORY,
+      useClass: UserSqlRepository,
     },
   ],
 })

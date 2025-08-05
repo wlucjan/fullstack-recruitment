@@ -35,7 +35,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const payload = { email: user.email.value, sub: user.id };
+    const payload = { sub: user.id };
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '24h';
     const token = this.jwtService.sign(payload, { expiresIn });
 

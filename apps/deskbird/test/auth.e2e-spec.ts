@@ -103,10 +103,7 @@ describe('Auth (e2e)', () => {
 
       const decodedToken = jwtService.decode(response.body.access_token);
       expect(decodedToken).toBeTruthy();
-      expect(decodedToken.email.value || decodedToken.email).toBe(
-        authenticatedUser.email,
-      );
-      expect(decodedToken.sub).toBeDefined();
+      expect(decodedToken.sub).toBe(authenticatedUser.id);
       expect(decodedToken.iat).toBeDefined();
       expect(decodedToken.exp).toBeDefined();
     });

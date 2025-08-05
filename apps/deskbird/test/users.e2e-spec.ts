@@ -95,7 +95,7 @@ describe('Users (e2e)', () => {
   });
 
   function generateJwtToken(user: { id: string; email: string }) {
-    const payload = { email: user.email, sub: user.id };
+    const payload = { sub: user.id };
     return jwtService.sign(payload);
   }
 
@@ -210,7 +210,11 @@ describe('Users (e2e)', () => {
     const createdUserId = createResponse.body.id;
 
     // Act: Delete the user
-    const deleteResponse = await deleteUserWithAuth(app, createdUserId, jwtToken);
+    const deleteResponse = await deleteUserWithAuth(
+      app,
+      createdUserId,
+      jwtToken,
+    );
 
     // Assert
     expect(deleteResponse.status).toBe(204);

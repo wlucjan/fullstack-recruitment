@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { QueryBus } from '@nestjs/cqrs';
-import { GetUserWithEmailQuery } from '../../../users/application/queries/get-user-with-email.query';
+import { GetUserQuery } from '../../../users/application/queries/get-user.query';
 import { User } from '../../../users/application/entities/user';
 import { AuthenticatedUser } from '../interfaces/authenticated-user.interface';
 
@@ -25,12 +25,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: {
-    sub: string;
-    email: string;
-  }): Promise<AuthenticatedUser> {
-    const user = await this.queryBus.execute<GetUserWithEmailQuery, User>(
-      new GetUserWithEmailQuery(payload.email),
+  async validate(payload: { sub: string }): Promise<AuthenticatedUser> {
+    const user = await this.queryBus.execute<GetUserQuery, User>(
+      new GetUserQuery(payload.sub),
     );
 
     return {

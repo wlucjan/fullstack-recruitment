@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:17.5-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${TYPEORM_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${TYPEORM_PASSWORD:-postgres}
+      POSTGRES_DB: ${TYPEORM_DATABASE:-bookshelf}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TYPEORM_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./apps/deskbird
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - TYPEORM_HOST=db
+      - TYPEORM_PORT=5432
+      - TYPEORM_USERNAME=${TYPEORM_USERNAME:-postgres}
+      - TYPEORM_PASSWORD=${TYPEORM_PASSWORD:-postgres}
+      - TYPEORM_DATABASE=${TYPEORM_DATABASE:-bookshelf}
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key}
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./apps/deskbird:/app
+      - /app/node_modules
+    command: sh -c "pnpm run migration:run && pnpm run start:prod"
+
+  frontend:
+    build:
+      context: ./apps/deskbird-frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

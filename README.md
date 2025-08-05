@@ -1,63 +1,100 @@
-# Deskbird API
-
-A NestJS-based user management API with authentication and authorization.
+# Deskbird Full Stack Application
 
 ## Prerequisites
 
-- Node.js (v18 or higher)
-- pnpm
-- Docker and Docker Compose (for database)
+- Docker and Docker Compose (recommended)
+- Node.js (v18 or higher) and pnpm (for local development)
 
-## Setup
+## Quick Start with Docker Compose (Recommended)
 
-1. **Install dependencies:**
-
-   ```bash
-   pnpm install
-   ```
-
-2. **Environment configuration:**
-
-   ```bash
-   cd apps/deskbird
-   cp .env.example .env
-   ```
-
-   Update the `.env` file with your configuration if needed.
-
-3. **Start the database:**
-
-   ```bash
-   docker-compose up -d
-   ```
-
-4. **Run database migrations:**
-   ```bash
-   pnpm --filter deskbird run migration:run
-   ```
-
-## Starting Application
-
-### Development Mode
+### Development Mode (with hot reload)
 
 ```bash
-pnpm --filter deskbird run start:dev
+# Start all services in development mode
+docker-compose -f docker-compose.dev.yml up
+
+# Services will be available at:
+# - Frontend: http://localhost:4200
+# - Backend API: http://localhost:3000
+# - Database: localhost:5432
 ```
 
 ### Production Mode
 
 ```bash
-pnpm --filter deskbird run build
-pnpm --filter deskbird run start:prod
+# Build and start all services
+docker-compose -f docker-compose.fullstack.yml up --build
+
+# Services will be available at:
+# - Frontend: http://localhost:4200
+# - Backend API: http://localhost:3000
 ```
 
-### Debug Mode
+## Manual Setup (Local Development)
+
+### 1. Environment Configuration
+
+Create a `.env` file in the root directory:
+
+```env
+TYPEORM_USERNAME=postgres
+TYPEORM_PASSWORD=postgres
+TYPEORM_DATABASE=deskbird
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+```
+
+### 2. Install Dependencies
 
 ```bash
-pnpm --filter deskbird run start:debug
+pnpm install
 ```
 
-The API will be available at `http://localhost:3000/api/v1`
+### 3. Start Database
+
+```bash
+docker-compose up -d db
+```
+
+### 4. Setup Backend
+
+```bash
+# Run migrations
+pnpm --filter deskbird run migration:run
+
+# Seed database with sample data
+pnpm --filter deskbird run seed
+
+# Start backend in development mode
+pnpm --filter deskbird run start:dev
+```
+
+### 5. Start Frontend
+
+```bash
+# Start frontend in development mode
+pnpm --filter deskbird-frontend run start
+```
+
+The application will be available at:
+
+- **Frontend**: `http://localhost:4200`
+- **Backend API**: `http://localhost:3000`
+- **API Documentation**: `http://localhost:3000/api` (development only)
+
+## Default Login Credentials
+
+After running the seeding process, you can log in with:
+
+- **Admin User**:
+  - Email: `admin@deskbird.com`
+  - Password: `admin123`
+
+## Usage
+
+1. **Start the application** using Docker Compose (development mode recommended)
+2. **Access the frontend** at http://localhost:4200
+3. **Login** with the admin account above
+4. **Manage users** - create, view, and delete users through the web interface
 
 ### API Documentation
 
@@ -105,4 +142,6 @@ apps/deskbird/
 ## What I would add or do differently
 
 - Use authN service like Supertokens, FusionAuth or Keycloak
+- Add missing CRUD operations for users
 - Add comprehensive logging and monitoring
+- Frontend app is fully AI generated

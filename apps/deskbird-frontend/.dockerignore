@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.angular
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.log
+.DS_Store
+Thumbs.db

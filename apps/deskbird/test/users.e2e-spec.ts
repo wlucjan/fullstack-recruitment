@@ -24,10 +24,16 @@ describe('Users (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer;
   let jwtService: JwtService;
 
-  const authenticatedUser = {
+  const authenticatedAdmin = {
     id: '0cf1304f-b291-4981-bd24-2034c886e7ca',
     email: 'admin@example.com',
     role: 'admin',
+  };
+
+  const authenticatedUser = {
+    id: '1cf1304f-b291-4981-bd24-2034c886e7cb',
+    email: 'user@example.com',
+    role: 'user',
   };
 
   beforeAll(async () => {
@@ -80,6 +86,7 @@ describe('Users (e2e)', () => {
   });
 
   beforeEach(async () => {
+    await seedUserFixture(dataSource, authenticatedAdmin);
     await seedUserFixture(dataSource, authenticatedUser);
   });
 
@@ -92,9 +99,9 @@ describe('Users (e2e)', () => {
     return jwtService.sign(payload);
   }
 
-  it('should create a new user when authenticated', async () => {
+  it('should create a new user when authenticated as admin', async () => {
     // Create an admin user for authentication
-    const jwtToken = generateJwtToken(authenticatedUser);
+    const jwtToken = generateJwtToken(authenticatedAdmin);
 
     const newUser = {
       email: 'john.doe@example.com',
@@ -165,11 +172,79 @@ describe('Users (e2e)', () => {
     },
   ])('should throw validation error for: $description', async ({ user }) => {
     // Create an admin user for authentication
-    const jwtToken = generateJwtToken(authenticatedUser);
+    const jwtToken = generateJwtToken(authenticatedAdmin);
 
     const response = await createUserWithAuth(app, user, jwtToken);
 
     expect(response.status).toBe(400);
+  });
+
+  it('should return 403 when regular user tries to create user', async () => {
+    const jwtToken = generateJwtToken(authenticatedUser);
+
+    const newUser = {
+      email: 'john.doe@example.com',
+      plainPassword: 'password',
+      role: 'user',
+    };
+
+    const response = await createUserWithAuth(app, newUser, jwtToken);
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe('Insufficient permissions');
+  });
+
+  it('should delete a user when authenticated as admin', async () => {
+    // Arrange: Create a user to delete
+    const jwtToken = generateJwtToken(authenticatedAdmin);
+
+    const newUser = {
+      email: 'john.doe.delete@example.com',
+      plainPassword: 'password',
+      role: 'user',
+    };
+
+    const createResponse = await createUserWithAuth(app, newUser, jwtToken);
+    expect(createResponse.status).toBe(201);
+
+    const createdUserId = createResponse.body.id;
+
+    // Act: Delete the user
+    const deleteResponse = await deleteUserWithAuth(app, createdUserId, jwtToken);
+
+    // Assert
+    expect(deleteResponse.status).toBe(204);
+  });
+
+  it('should return 403 when regular user tries to delete user', async () => {
+    const adminJwtToken = generateJwtToken(authenticatedAdmin);
+    const userJwtToken = generateJwtToken(authenticatedUser);
+
+    // First create a user as admin
+    const newUser = {
+      email: 'john.doe@example.com',
+      plainPassword: 'password',
+      role: 'user',
+    };
+
+    const createResponse = await createUserWithAuth(
+      app,
+      newUser,
+      adminJwtToken,
+    );
+    expect(createResponse.status).toBe(201);
+
+    const createdUserId = createResponse.body.id;
+
+    // Try to delete as regular user - should be forbidden
+    const deleteResponse = await deleteUserWithAuth(
+      app,
+      createdUserId,
+      userJwtToken,
+    );
+
+    expect(deleteResponse.status).toBe(403);
+    expect(deleteResponse.body.message).toBe('Insufficient permissions');
   });
 });
 
@@ -207,6 +282,16 @@ async function createUserWithAuth(
     .post('/api/v1/users')
     .set('Authorization', `Bearer ${token}`)
     .send(payload);
+}
+
+async function deleteUserWithAuth(
+  app: INestApplication<App>,
+  userId: string,
+  token: string,
+) {
+  return request(app.getHttpServer())
+    .delete(`/api/v1/users/${userId}`)
+    .set('Authorization', `Bearer ${token}`);
 }
 
 function expectUser(

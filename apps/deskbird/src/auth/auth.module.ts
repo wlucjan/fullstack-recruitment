@@ -9,6 +9,8 @@ import { ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { AuthController } from './api/http/auth.controller';
 import { JwtStrategy } from './application/strategies/jwt.strategy';
+import { CaslAbilityFactory } from './application/casl/casl-ability.factory';
+import { CaslAuthGuard } from './application/guards/casl-auth.guard';
 
 @Module({
   imports: [
@@ -31,8 +33,16 @@ import { JwtStrategy } from './application/strategies/jwt.strategy';
     JwtAuthGuard,
     AuthGuard,
     JwtStrategy,
+    CaslAbilityFactory,
+    CaslAuthGuard,
   ],
-  exports: [PASSWORD_SERVICE, AuthGuard, JwtAuthGuard],
+  exports: [
+    PASSWORD_SERVICE,
+    AuthGuard,
+    JwtAuthGuard,
+    CaslAbilityFactory,
+    CaslAuthGuard,
+  ],
   controllers: [AuthController],
 })
 export class AuthModule {}

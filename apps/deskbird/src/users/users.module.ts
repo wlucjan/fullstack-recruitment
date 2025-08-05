@@ -5,6 +5,7 @@ import { UsersController } from './api/users.controller';
 import { USER_REPOSITORY } from './application/entities/user.repository';
 import { UserSqlRepository } from './infrastructure/user.repository';
 import { CreateUserCommandHandler } from './application/commands/create-user.command';
+import { DeleteUserHandler } from './application/commands/delete-user.command';
 import { CqrsModule } from '@nestjs/cqrs';
 import { AuthModule } from '../auth/auth.module';
 import { GetUserWithEmailQueryHandler } from './application/queries/get-user-with-email.query';
@@ -14,6 +15,7 @@ import { GetUserWithEmailQueryHandler } from './application/queries/get-user-wit
   controllers: [UsersController],
   providers: [
     CreateUserCommandHandler,
+    DeleteUserHandler,
     GetUserWithEmailQueryHandler,
     {
       provide: USER_REPOSITORY,

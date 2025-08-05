@@ -84,6 +84,12 @@ Authorization: Bearer {{LoginUser.response.body.access_token}}
 }
 
 
+### Delete user
+
+DELETE http://localhost:3000/api/v1/users/{{CreateUser.response.body.id}} HTTP/1.1
+Content-Type: application/json
+
+
 ### Health Check Endpoints
 
 

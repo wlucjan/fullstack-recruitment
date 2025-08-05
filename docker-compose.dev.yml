@@ -36,7 +36,7 @@ services:
     volumes:
       - ./apps/deskbird:/app
       - /app/node_modules
-    command: sh -c "npm install -g pnpm && pnpm install && pnpm run migration:run && pnpm run start:dev"
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run migration:run && pnpm run seed && pnpm run start:dev"
 
   frontend:
     image: node:20-alpine

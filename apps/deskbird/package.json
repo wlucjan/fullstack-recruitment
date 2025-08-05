@@ -20,7 +20,9 @@
     "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d ./src/database/datasource.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d ./src/database/datasource.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d ./src/database/datasource.ts"
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d ./src/database/datasource.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeding/seed.ts",
+    "seed:prod": "node dist/database/seeding/seed.js"
   },
   "dependencies": {
     "@casl/ability": "^6.7.3",

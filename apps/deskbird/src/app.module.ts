@@ -9,6 +9,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/application/guards/auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
+import { SeederModule } from './database/seeding/seeder.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { HealthModule } from './health/health.module';
     AuthModule,
     UsersModule,
     HealthModule,
+    SeederModule,
   ],
   controllers: [],
   providers: [

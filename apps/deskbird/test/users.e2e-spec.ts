@@ -250,6 +250,88 @@ describe('Users (e2e)', () => {
     expect(deleteResponse.status).toBe(403);
     expect(deleteResponse.body.message).toBe('Insufficient permissions');
   });
+
+  it('should return paginated users list when authenticated as admin', async () => {
+    const jwtToken = generateJwtToken(authenticatedAdmin);
+
+    // Create additional users for pagination testing
+    const additionalUsers = [
+      { email: 'user1@example.com', plainPassword: 'password', role: 'user' },
+      { email: 'user2@example.com', plainPassword: 'password', role: 'user' },
+      { email: 'user3@example.com', plainPassword: 'password', role: 'admin' },
+    ];
+
+    for (const user of additionalUsers) {
+      const createResponse = await createUserWithAuth(app, user, jwtToken);
+      expect(createResponse.status).toBe(201);
+    }
+
+    const response = await getUsersWithAuth(app, jwtToken);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('data');
+    expect(response.body).toHaveProperty('metadata');
+    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(response.body.data.length).toBeGreaterThanOrEqual(2); // At least admin + regular user
+    expect(response.body.metadata).toEqual({
+      total: expect.any(Number),
+      totalPages: expect.any(Number),
+      limit: 10,
+      page: 1,
+      hasPrevious: false,
+      hasNext: expect.any(Boolean),
+    });
+
+    // Verify user structure
+    const user = response.body.data[0];
+    expect(user).toHaveProperty('id');
+    expect(user).toHaveProperty('email');
+    expect(user).toHaveProperty('role');
+    expect(user).not.toHaveProperty('passwordHash');
+  });
+
+  it('should return paginated users list when authenticated as regular user', async () => {
+    const jwtToken = generateJwtToken(authenticatedUser);
+
+    const response = await getUsersWithAuth(app, jwtToken);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('data');
+    expect(response.body).toHaveProperty('metadata');
+    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(response.body.data.length).toBeGreaterThanOrEqual(2); // At least admin + regular user
+  });
+
+  it('should return 401 when getting users without authentication', async () => {
+    const response = await getUsers(app);
+
+    expect(response.status).toBe(401);
+  });
+
+  it('should support pagination parameters', async () => {
+    const jwtToken = generateJwtToken(authenticatedAdmin);
+
+    // Create additional users for pagination testing
+    const additionalUsers = [
+      { email: 'pag1@example.com', plainPassword: 'password', role: 'user' },
+      { email: 'pag2@example.com', plainPassword: 'password', role: 'user' },
+    ];
+
+    for (const user of additionalUsers) {
+      await createUserWithAuth(app, user, jwtToken);
+    }
+
+    // Test with custom page size
+    const response = await getUsersWithAuth(app, jwtToken, {
+      page: 1,
+      limit: 2,
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.length).toBeLessThanOrEqual(2);
+    expect(response.body.metadata.limit).toBe(2);
+    expect(response.body.metadata.page).toBe(1);
+  });
 });
 
 async function cleanUsersTable(dataSource: DataSource) {
@@ -295,6 +377,30 @@ async function deleteUserWithAuth(
 ) {
   return request(app.getHttpServer())
     .delete(`/api/v1/users/${userId}`)
+    .set('Authorization', `Bearer ${token}`);
+}
+
+async function getUsers(app: INestApplication<App>) {
+  return request(app.getHttpServer()).get('/api/v1/users');
+}
+
+async function getUsersWithAuth(
+  app: INestApplication<App>,
+  token: string,
+  params?: { page?: number; limit?: number },
+) {
+  let url = '/api/v1/users';
+  if (params) {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+    if (searchParams.toString()) {
+      url += `?${searchParams.toString()}`;
+    }
+  }
+
+  return request(app.getHttpServer())
+    .get(url)
     .set('Authorization', `Bearer ${token}`);
 }
 

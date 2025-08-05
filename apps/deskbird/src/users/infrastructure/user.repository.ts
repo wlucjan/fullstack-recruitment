@@ -6,6 +6,7 @@ import { User as DomainUser } from '../application/entities/user';
 import { UserOrmEntity } from './user.entity';
 import { UserNotFoundError } from '../application/errors/user-not-found';
 import { UserAlreadyExistsError } from '../application/errors/user-already-exists';
+import { Page, PaginatedResult } from '../../common/application/page';
 
 @Injectable()
 export class UserSqlRepository implements UserRepository {
@@ -57,6 +58,17 @@ export class UserSqlRepository implements UserRepository {
     }
 
     return entity.toDomain();
+  }
+
+  async findAll(page: Page): Promise<PaginatedResult<DomainUser>> {
+    const [entities, totalCount] = await this.repo.findAndCount({
+      skip: page.offset,
+      take: page.limit,
+    });
+
+    const domainUsers = entities.map((entity) => entity.toDomain());
+
+    return new PaginatedResult(domainUsers, totalCount);
   }
 
   async delete(id: string): Promise<void> {

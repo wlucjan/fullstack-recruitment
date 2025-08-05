@@ -10,6 +10,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { AuthModule } from '../auth/auth.module';
 import { GetUserWithEmailQueryHandler } from './application/queries/get-user-with-email.query';
 import { GetUserHandler } from './application/queries/get-user.query';
+import { GetUsersHandler } from './application/queries/get-users.query';
 
 @Module({
   imports: [CqrsModule, TypeOrmModule.forFeature([UserOrmEntity]), AuthModule],
@@ -19,6 +20,7 @@ import { GetUserHandler } from './application/queries/get-user.query';
     DeleteUserHandler,
     GetUserWithEmailQueryHandler,
     GetUserHandler,
+    GetUsersHandler,
     {
       provide: USER_REPOSITORY,
       useClass: UserSqlRepository,

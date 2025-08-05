@@ -3,6 +3,7 @@ import { UserRepository } from '../application/entities/user.repository';
 import { User as DomainUser } from '../application/entities/user';
 import { UserNotFoundError } from '../application/errors/user-not-found';
 import { UserAlreadyExistsError } from '../application/errors/user-already-exists';
+import { Page, PaginatedResult } from '../../common/application/page';
 
 @Injectable()
 export class UserInMemoryRepository implements UserRepository {
@@ -42,6 +43,17 @@ export class UserInMemoryRepository implements UserRepository {
     }
 
     return Promise.resolve(user);
+  }
+
+  async findAll(page: Page): Promise<PaginatedResult<DomainUser>> {
+    const allUsers = Array.from(this.users.values());
+    const totalCount = allUsers.length;
+
+    const startIndex = page.offset;
+    const endIndex = startIndex + page.limit;
+    const paginatedUsers = allUsers.slice(startIndex, endIndex);
+
+    return Promise.resolve(new PaginatedResult(paginatedUsers, totalCount));
   }
 
   async delete(id: string): Promise<void> {

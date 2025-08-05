@@ -26,12 +26,16 @@ export class AuthService {
       new GetUserWithEmailQuery(credentials.email),
     );
 
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
     const isPasswordValid = await this.passwordService.verify(
       credentials.password,
       user.passwordHash,
     );
 
-    if (!user || !isPasswordValid) {
+    if (!isPasswordValid) {
       throw new UnauthorizedException();
     }
 

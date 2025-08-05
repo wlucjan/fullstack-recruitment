@@ -50,11 +50,11 @@ export class UserSqlRepository implements UserRepository {
     return entity.toDomain();
   }
 
-  async findByEmail(email: string): Promise<DomainUser> {
+  async findByEmail(email: string): Promise<DomainUser | null> {
     const entity = await this.repo.findOne({ where: { email } });
 
     if (!entity) {
-      throw new UserNotFoundError();
+      return null;
     }
 
     return entity.toDomain();

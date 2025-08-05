@@ -26,6 +26,8 @@ import { UserListDto } from '../application/dto/user-list.dto';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Resource } from '../../auth/application/decorators/resource.decorator';
 import { RequiredAction } from '../../auth/application/decorators/action.decorator';
+import { User } from '../../auth/application/decorators/user.decorator';
+import { AuthenticatedUser } from '../../auth/application/interfaces/authenticated-user.interface';
 import {
   Action,
   Subject,
@@ -73,6 +75,15 @@ export class UsersController {
     >(new CreateUserCommand(user.email, user.role, user.plainPassword));
 
     return plainToInstance(CreateUserResponseDto, createdUser);
+  }
+
+  @Get('me')
+  async getCurrentUser(@User() user: AuthenticatedUser): Promise<UserResponseDto> {
+    return plainToInstance(UserResponseDto, {
+      id: user.userId,
+      email: user.email,
+      role: user.role,
+    });
   }
 
   @Delete(':id')

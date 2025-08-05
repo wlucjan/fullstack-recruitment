@@ -13,7 +13,7 @@ export class GetUserWithEmailQueryHandler
 {
   constructor(@Inject(USER_REPOSITORY) private readonly repo: UserRepository) {}
 
-  async execute(query: GetUserWithEmailQuery): Promise<User> {
+  async execute(query: GetUserWithEmailQuery): Promise<User | null> {
     return this.repo.findByEmail(query.email);
   }
 }

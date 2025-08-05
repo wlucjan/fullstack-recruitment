@@ -142,6 +142,8 @@ apps/deskbird/
 ## What I would add or do differently
 
 - Use authN service like Supertokens, FusionAuth or Keycloak
+- If local authN was to be kept it is missing some invitations flow, refresh token, storing token in cookies inaccessible by the frontend's JS
 - Add missing CRUD operations for users
-- Add comprehensive logging and monitoring
+- Add comprehensive logging and observability
+- Add more integration tests
 - Frontend app is fully AI generated

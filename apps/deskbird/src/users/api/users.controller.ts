@@ -22,6 +22,7 @@ import { CreateUserCommand } from '../application/commands/create-user.command';
 import { DeleteUserCommand } from '../application/commands/delete-user.command';
 import { GetUsersQuery } from '../application/queries/get-users.query';
 import { UserDto } from '../application/dto/user.dto';
+import { UserListDto } from '../application/dto/user-list.dto';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Resource } from '../../auth/application/decorators/resource.decorator';
 import { RequiredAction } from '../../auth/application/decorators/action.decorator';
@@ -34,7 +35,6 @@ import {
   PageMetadata,
   PaginatedResult,
 } from '../../common/application/page';
-import { User } from '../application/entities/user';
 
 @Controller('users')
 @Resource(Subject.User)
@@ -53,19 +53,13 @@ export class UsersController {
 
     const result = await this.queryBus.execute<
       GetUsersQuery,
-      PaginatedResult<User>
+      PaginatedResult<UserListDto>
     >(new GetUsersQuery(page));
 
     const metadata = new PageMetadata(result.totalCount, page.limit, page.page);
 
-    const users = result.result.map((user) => ({
-      id: user.id,
-      email: user.email.value,
-      role: user.role.value,
-    }));
-
     return {
-      data: plainToInstance(UserResponseDto, users),
+      data: plainToInstance(UserResponseDto, result.result),
       metadata: plainToInstance(PageMetadataDto, metadata),
     };
   }

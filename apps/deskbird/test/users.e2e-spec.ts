@@ -100,7 +100,7 @@ describe('Users (e2e)', () => {
   }
 
   it('should create a new user when authenticated as admin', async () => {
-    // Create an admin user for authentication
+    // Arrange
     const jwtToken = generateJwtToken(authenticatedAdmin);
 
     const newUser = {
@@ -109,8 +109,10 @@ describe('Users (e2e)', () => {
       role: 'user',
     };
 
+    // Act
     const response = await createUserWithAuth(app, newUser, jwtToken);
 
+    // Assert
     expect(response.status).toBe(201);
     expectUser(response.body, {
       id: expect.stringMatching(
@@ -171,7 +173,6 @@ describe('Users (e2e)', () => {
       description: 'Invalid role',
     },
   ])('should throw validation error for: $description', async ({ user }) => {
-    // Create an admin user for authentication
     const jwtToken = generateJwtToken(authenticatedAdmin);
 
     const response = await createUserWithAuth(app, user, jwtToken);
@@ -181,7 +182,6 @@ describe('Users (e2e)', () => {
 
   it('should return 403 when regular user tries to create user', async () => {
     const jwtToken = generateJwtToken(authenticatedUser);
-
     const newUser = {
       email: 'john.doe@example.com',
       plainPassword: 'password',
@@ -195,7 +195,7 @@ describe('Users (e2e)', () => {
   });
 
   it('should delete a user when authenticated as admin', async () => {
-    // Arrange: Create a user to delete
+    // Arrange
     const jwtToken = generateJwtToken(authenticatedAdmin);
 
     const newUser = {
@@ -209,7 +209,7 @@ describe('Users (e2e)', () => {
 
     const createdUserId = createResponse.body.id;
 
-    // Act: Delete the user
+    // Act
     const deleteResponse = await deleteUserWithAuth(
       app,
       createdUserId,
@@ -221,10 +221,10 @@ describe('Users (e2e)', () => {
   });
 
   it('should return 403 when regular user tries to delete user', async () => {
+    // Arrange
     const adminJwtToken = generateJwtToken(authenticatedAdmin);
     const userJwtToken = generateJwtToken(authenticatedUser);
 
-    // First create a user as admin
     const newUser = {
       email: 'john.doe@example.com',
       plainPassword: 'password',
@@ -240,21 +240,22 @@ describe('Users (e2e)', () => {
 
     const createdUserId = createResponse.body.id;
 
-    // Try to delete as regular user - should be forbidden
+    // Act
     const deleteResponse = await deleteUserWithAuth(
       app,
       createdUserId,
       userJwtToken,
     );
 
+    // Assert
     expect(deleteResponse.status).toBe(403);
     expect(deleteResponse.body.message).toBe('Insufficient permissions');
   });
 
   it('should return paginated users list when authenticated as admin', async () => {
+    // Arrange
     const jwtToken = generateJwtToken(authenticatedAdmin);
 
-    // Create additional users for pagination testing
     const additionalUsers = [
       { email: 'user1@example.com', plainPassword: 'password', role: 'user' },
       { email: 'user2@example.com', plainPassword: 'password', role: 'user' },
@@ -266,8 +267,10 @@ describe('Users (e2e)', () => {
       expect(createResponse.status).toBe(201);
     }
 
+    // Act
     const response = await getUsersWithAuth(app, jwtToken);
 
+    // Assert
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('data');
     expect(response.body).toHaveProperty('metadata');
@@ -282,7 +285,6 @@ describe('Users (e2e)', () => {
       hasNext: expect.any(Boolean),
     });
 
-    // Verify user structure
     const user = response.body.data[0];
     expect(user).toHaveProperty('id');
     expect(user).toHaveProperty('email');
@@ -299,7 +301,7 @@ describe('Users (e2e)', () => {
     expect(response.body).toHaveProperty('data');
     expect(response.body).toHaveProperty('metadata');
     expect(Array.isArray(response.body.data)).toBe(true);
-    expect(response.body.data.length).toBeGreaterThanOrEqual(2); // At least admin + regular user
+    expect(response.body.data.length).toBeGreaterThanOrEqual(2);
   });
 
   it('should return 401 when getting users without authentication', async () => {
@@ -309,9 +311,9 @@ describe('Users (e2e)', () => {
   });
 
   it('should support pagination parameters', async () => {
+    // Arrange
     const jwtToken = generateJwtToken(authenticatedAdmin);
 
-    // Create additional users for pagination testing
     const additionalUsers = [
       { email: 'pag1@example.com', plainPassword: 'password', role: 'user' },
       { email: 'pag2@example.com', plainPassword: 'password', role: 'user' },
@@ -321,17 +323,171 @@ describe('Users (e2e)', () => {
       await createUserWithAuth(app, user, jwtToken);
     }
 
-    // Test with custom page size
+    // Act
     const response = await getUsersWithAuth(app, jwtToken, {
       page: 1,
       limit: 2,
     });
 
+    // Assert
     expect(response.status).toBe(200);
     expect(response.body.data.length).toBeLessThanOrEqual(2);
     expect(response.body.metadata.limit).toBe(2);
     expect(response.body.metadata.page).toBe(1);
   });
+
+  it('should handle first page correctly', async () => {
+    // Arrange
+    const jwtToken = generateJwtToken(authenticatedAdmin);
+
+    const users = Array.from({ length: 5 }, (_, i) => ({
+      email: `firstpage${i}@example.com`,
+      plainPassword: 'password',
+      role: 'user',
+    }));
+
+    for (const user of users) {
+      await createUserWithAuth(app, user, jwtToken);
+    }
+
+    // Act
+    const response = await getUsersWithAuth(app, jwtToken, {
+      page: 1,
+      limit: 3,
+    });
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.body.metadata.page).toBe(1);
+    expect(response.body.metadata.hasPrevious).toBe(false);
+    expect(response.body.metadata.hasNext).toBe(true);
+    expect(response.body.data.length).toBe(3);
+  });
+
+  it('should handle last page correctly', async () => {
+    // Arrange
+    const jwtToken = generateJwtToken(authenticatedAdmin);
+
+    const users = Array.from({ length: 7 }, (_, i) => ({
+      email: `lastpage${i}@example.com`,
+      plainPassword: 'password',
+      role: 'user',
+    }));
+
+    for (const user of users) {
+      await createUserWithAuth(app, user, jwtToken);
+    }
+
+    // Act
+    const response = await getUsersWithAuth(app, jwtToken, {
+      page: 3,
+      limit: 3,
+    });
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.body.metadata.page).toBe(3);
+    expect(response.body.metadata.hasPrevious).toBe(true);
+    expect(response.body.metadata.hasNext).toBe(false);
+    expect(response.body.data.length).toBe(3);
+  });
+
+  it('should handle single page scenario', async () => {
+    // Arrange
+    const jwtToken = generateJwtToken(authenticatedAdmin);
+
+    // Act
+    const response = await getUsersWithAuth(app, jwtToken, {
+      page: 1,
+      limit: 10,
+    });
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.body.metadata.page).toBe(1);
+    expect(response.body.metadata.totalPages).toBe(1);
+    expect(response.body.metadata.hasPrevious).toBe(false);
+    expect(response.body.metadata.hasNext).toBe(false);
+    expect(response.body.data.length).toBe(2);
+  });
+
+  it('should handle middle page correctly', async () => {
+    // Arrange
+    const jwtToken = generateJwtToken(authenticatedAdmin);
+
+    const users = Array.from({ length: 8 }, (_, i) => ({
+      email: `middlepage${i}@example.com`,
+      plainPassword: 'password',
+      role: 'user',
+    }));
+
+    for (const user of users) {
+      await createUserWithAuth(app, user, jwtToken);
+    }
+
+    // Act
+    const response = await getUsersWithAuth(app, jwtToken, {
+      page: 2,
+      limit: 3,
+    });
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.body.metadata.page).toBe(2);
+    expect(response.body.metadata.hasPrevious).toBe(true);
+    expect(response.body.metadata.hasNext).toBe(true);
+    expect(response.body.data.length).toBe(3);
+  });
+
+  it('should handle page beyond available data', async () => {
+    const jwtToken = generateJwtToken(authenticatedAdmin);
+
+    // Only use the 2 seeded users
+    const response = await getUsersWithAuth(app, jwtToken, {
+      page: 5,
+      limit: 10,
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.metadata.page).toBe(5);
+    expect(response.body.metadata.hasPrevious).toBe(true);
+    expect(response.body.metadata.hasNext).toBe(false);
+    expect(response.body.data.length).toBe(0);
+  });
+
+  it.each([
+    {
+      params: { page: -1, limit: 10 },
+      description: 'negative page',
+    },
+    {
+      params: { page: 1, limit: -5 },
+      description: 'negative limit',
+    },
+    {
+      params: { page: 1, limit: 101 },
+      description: 'limit greater than 100',
+    },
+    {
+      params: { page: 1.5, limit: 10 },
+      description: 'non-integer page',
+    },
+    {
+      params: { page: 1, limit: 10.5 },
+      description: 'non-integer limit',
+    },
+  ])(
+    'should return 400 for invalid query params: $description',
+    async ({ params }) => {
+      const jwtToken = generateJwtToken(authenticatedAdmin);
+
+      const response = await getUsersWithAuth(app, jwtToken, params);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('message');
+      expect(Array.isArray(response.body.message)).toBe(true);
+    },
+  );
 });
 
 async function cleanUsersTable(dataSource: DataSource) {

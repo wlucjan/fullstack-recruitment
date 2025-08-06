@@ -1,11 +1,23 @@
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@import 'primeicons/primeicons.css';
 
 html, body {
   height: 100%;
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  background-color: var(--surface-ground, #f8f9fa);
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Ensure PrimeNG components have proper styling */
+.p-component {
+  font-family: inherit;
+}
+
+/* Fix any layout issues */
+app-root {
+  display: block;
+  min-height: 100vh;
 }

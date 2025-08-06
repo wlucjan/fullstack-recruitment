@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { ToolbarModule } from 'primeng/toolbar';
+import { DialogModule } from 'primeng/dialog';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TagModule } from 'primeng/tag';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { Router } from '@angular/router';
 
 import { UsersService, UserListItem } from '../../services/users.service';
@@ -18,118 +19,124 @@ import { CreateUserDialogComponent } from './create-user-dialog.component';
   standalone: true,
   imports: [
     CommonModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatButtonModule,
-    MatIconModule,
-    MatToolbarModule,
-    MatDialogModule,
-    MatSnackBarModule
+    TableModule,
+    ButtonModule,
+    ToolbarModule,
+    DialogModule,
+    ToastModule,
+    ConfirmDialogModule,
+    TagModule,
+    CreateUserDialogComponent
   ],
   template: `
-    <mat-toolbar>
-      <span>Users Management</span>
-      <span class="spacer"></span>
-      <button mat-raised-button color="primary" *ngIf="isAdmin" (click)="openCreateUserDialog()">
-        <mat-icon>add</mat-icon>
-        Create User
-      </button>
-      <button mat-button (click)="logout()">
-        <mat-icon>logout</mat-icon>
-        Logout
-      </button>
-    </mat-toolbar>
+    <p-toolbar>
+      <div class="p-toolbar-group-start">
+        <h2>Users Management</h2>
+      </div>
+      <div class="p-toolbar-group-end">
+        <p-button 
+          *ngIf="isAdmin"
+          label="Create User" 
+          icon="pi pi-plus" 
+          (onClick)="showCreateUserDialog = true"
+          styleClass="p-button-success p-mr-2">
+        </p-button>
+        <p-button 
+          label="Logout" 
+          icon="pi pi-sign-out" 
+          (onClick)="logout()"
+          styleClass="p-button-secondary">
+        </p-button>
+      </div>
+    </p-toolbar>
 
     <div class="users-container">
-      <div class="users-table-container">
-        <table mat-table [dataSource]="users" class="users-table">
-          <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef>Email</th>
-            <td mat-cell *matCellDef="let user">{{ user.email }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="role">
-            <th mat-header-cell *matHeaderCellDef>Role</th>
-            <td mat-cell *matCellDef="let user">
-              <span class="role-badge" [class.admin]="user.role === 'admin'">
-                {{ user.role | titlecase }}
-              </span>
+      <p-table 
+        [value]="users" 
+        [paginator]="true" 
+        [rows]="pageSize"
+        [totalRecords]="totalUsers"
+        [lazy]="true"
+        (onLazyLoad)="loadUsers($event)"
+        [loading]="isLoading"
+        styleClass="p-datatable-striped">
+        
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Email</th>
+            <th>Role</th>
+            <th *ngIf="isAdmin">Actions</th>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="body" let-user>
+          <tr>
+            <td>{{ user.email }}</td>
+            <td>
+              <p-tag 
+                [value]="user.role | titlecase" 
+                [severity]="user.role === 'admin' ? 'warning' : 'info'">
+              </p-tag>
             </td>
-          </ng-container>
-
-
-          <ng-container matColumnDef="actions" *ngIf="isAdmin">
-            <th mat-header-cell *matHeaderCellDef>Actions</th>
-            <td mat-cell *matCellDef="let user">
-              <button 
-                mat-icon-button 
-                color="warn" 
-                (click)="deleteUser(user)"
-                [disabled]="user.id === currentUserId">
-                <mat-icon>delete</mat-icon>
-              </button>
+            <td *ngIf="isAdmin">
+              <p-button 
+                icon="pi pi-trash" 
+                styleClass="p-button-danger p-button-text p-button-sm"
+                (onClick)="confirmDelete(user)"
+                [disabled]="user.id === currentUserId"
+                pTooltip="Delete user">
+              </p-button>
             </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-        </table>
-
-        <mat-paginator
-          [length]="totalUsers"
-          [pageSize]="pageSize"
-          [pageSizeOptions]="[5, 10, 25, 50]"
-          [pageIndex]="currentPage - 1"
-          (page)="onPageChange($event)"
-          showFirstLastButtons>
-        </mat-paginator>
-      </div>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="3">No users found.</td>
+          </tr>
+        </ng-template>
+      </p-table>
     </div>
+
+    <p-dialog 
+      header="Create New User" 
+      [(visible)]="showCreateUserDialog" 
+      [modal]="true" 
+      [closable]="true"
+      [draggable]="false"
+      [resizable]="false"
+      styleClass="p-fluid">
+      <app-create-user-dialog 
+        *ngIf="showCreateUserDialog"
+        (userCreated)="onUserCreated()"
+        (dialogClosed)="showCreateUserDialog = false">
+      </app-create-user-dialog>
+    </p-dialog>
+
+    <p-confirmDialog></p-confirmDialog>
+    <p-toast></p-toast>
   `,
   styles: [`
-    .spacer {
-      flex: 1 1 auto;
+    h2 {
+      margin: 0;
+      color: var(--primary-color);
+      font-weight: 600;
+      font-size: 1.5rem;
     }
 
-    .users-container {
-      padding: 20px;
+    .p-mr-2 {
+      margin-right: 0.5rem;
     }
 
-    .users-table-container {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    :host ::ng-deep .p-datatable {
+      border-radius: 0;
     }
 
-    .users-table {
-      width: 100%;
+    :host ::ng-deep .p-toolbar {
+      border-radius: 0;
     }
-
-    .role-badge {
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      background-color: #e3f2fd;
-      color: #1976d2;
-    }
-
-    .role-badge.admin {
-      background-color: #fff3e0;
-      color: #f57c00;
-    }
-
-    mat-toolbar {
-      margin-bottom: 20px;
-    }
-
-    mat-toolbar button {
-      margin-left: 8px;
-    }
-
-    mat-toolbar button mat-icon {
-      margin-right: 4px;
-    }
-  `]
+  `],
+  providers: [MessageService, ConfirmationService]
 })
 export class UsersListComponent implements OnInit {
   users: UserListItem[] = [];
@@ -138,72 +145,83 @@ export class UsersListComponent implements OnInit {
   currentPage = 1;
   isAdmin = false;
   currentUserId: string | null = null;
-
-  displayedColumns: string[] = ['email', 'role'];
+  isLoading = false;
+  showCreateUserDialog = false;
 
   constructor(
     private usersService: UsersService,
     private authService: AuthService,
-    private dialog: MatDialog,
-    private snackBar: MatSnackBar,
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     this.isAdmin = this.authService.isAdmin();
     this.currentUserId = this.authService.getCurrentUser()?.id || null;
-    
-    if (this.isAdmin) {
-      this.displayedColumns.push('actions');
-    }
-    
-    this.loadUsers();
   }
 
-  loadUsers(): void {
+  loadUsers(event?: any): void {
+    this.isLoading = true;
+    
+    if (event) {
+      this.currentPage = (event.first / event.rows) + 1;  
+      this.pageSize = event.rows;
+    }
+
     this.usersService.getUsers(this.currentPage, this.pageSize).subscribe({
       next: (response) => {
         this.users = response.data;
         this.totalUsers = response.metadata.total;
+        this.isLoading = false;
       },
       error: (error) => {
-        this.snackBar.open('Error loading users', 'Close', { duration: 3000 });
+        this.isLoading = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error loading users'
+        });
         console.error('Error loading users:', error);
       }
     });
   }
 
-  onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex + 1;
-    this.pageSize = event.pageSize;
-    this.loadUsers();
-  }
-
-  openCreateUserDialog(): void {
-    const dialogRef = this.dialog.open(CreateUserDialogComponent, {
-      width: '400px'
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.loadUsers();
+  confirmDelete(user: UserListItem): void {
+    this.confirmationService.confirm({
+      message: `Are you sure you want to delete user ${user.email}?`,
+      header: 'Confirm Delete',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.deleteUser(user);
       }
     });
   }
 
   deleteUser(user: UserListItem): void {
-    if (confirm(`Are you sure you want to delete user ${user.email}?`)) {
-      this.usersService.deleteUser(user.id).subscribe({
-        next: () => {
-          this.snackBar.open('User deleted successfully', 'Close', { duration: 3000 });
-          this.loadUsers();
-        },
-        error: (error) => {
-          this.snackBar.open('Error deleting user', 'Close', { duration: 3000 });
-          console.error('Error deleting user:', error);
-        }
-      });
-    }
+    this.usersService.deleteUser(user.id).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'User deleted successfully'
+        });
+        this.loadUsers();
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error deleting user'
+        });
+        console.error('Error deleting user:', error);
+      }
+    });
+  }
+
+  onUserCreated(): void {
+    this.showCreateUserDialog = false;
+    this.loadUsers();
   }
 
   logout(): void {

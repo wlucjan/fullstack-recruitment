@@ -1,11 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+import { SelectModule } from 'primeng/select';
+import { ButtonModule } from 'primeng/button';
+import { MessageService } from 'primeng/api';
 import { CommonModule } from '@angular/common';
 
 import { UsersService } from '../../services/users.service';
@@ -16,83 +15,140 @@ import { UsersService } from '../../services/users.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatButtonModule
+    InputTextModule,
+    PasswordModule,
+    SelectModule,
+    ButtonModule
   ],
   template: `
-    <h2 mat-dialog-title>Create New User</h2>
-    
-    <mat-dialog-content>
-      <form [formGroup]="createUserForm">
-        <mat-form-field appearance="fill" class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" required>
-          <mat-error *ngIf="createUserForm.get('email')?.hasError('required')">
-            Email is required
-          </mat-error>
-          <mat-error *ngIf="createUserForm.get('email')?.hasError('email')">
-            Please enter a valid email
-          </mat-error>
-        </mat-form-field>
+    <form [formGroup]="createUserForm" (ngSubmit)="onCreate()">
+      <div class="field">
+        <label for="email">Email *</label>
+        <input 
+          pInputText 
+          id="email" 
+          type="email" 
+          formControlName="email" 
+          placeholder="Enter email address"
+          class="full-width"
+          [class.ng-invalid]="createUserForm.get('email')?.invalid && createUserForm.get('email')?.touched">
+        <small 
+          class="p-error" 
+          *ngIf="createUserForm.get('email')?.hasError('required') && createUserForm.get('email')?.touched">
+          Email is required
+        </small>
+        <small 
+          class="p-error" 
+          *ngIf="createUserForm.get('email')?.hasError('email') && createUserForm.get('email')?.touched">
+          Please enter a valid email
+        </small>
+      </div>
 
-        <mat-form-field appearance="fill" class="full-width">
-          <mat-label>Password</mat-label>
-          <input matInput type="password" formControlName="password" required>
-          <mat-error *ngIf="createUserForm.get('password')?.hasError('required')">
-            Password is required
-          </mat-error>
-          <mat-error *ngIf="createUserForm.get('password')?.hasError('minlength')">
-            Password must be at least 8 characters long
-          </mat-error>
-        </mat-form-field>
+      <div class="field">
+        <label for="password">Password *</label>
+        <p-password 
+          formControlName="password" 
+          inputId="password"
+          placeholder="Enter password (min 8 characters)"
+          [feedback]="true"
+          [toggleMask]="true"
+          styleClass="full-width"
+          [inputStyle]="{'width': '100%'}"
+          [class.ng-invalid]="createUserForm.get('password')?.invalid && createUserForm.get('password')?.touched">
+        </p-password>
+        <small 
+          class="p-error" 
+          *ngIf="createUserForm.get('password')?.hasError('required') && createUserForm.get('password')?.touched">
+          Password is required
+        </small>
+        <small 
+          class="p-error" 
+          *ngIf="createUserForm.get('password')?.hasError('minlength') && createUserForm.get('password')?.touched">
+          Password must be at least 8 characters long
+        </small>
+      </div>
 
-        <mat-form-field appearance="fill" class="full-width">
-          <mat-label>Role</mat-label>
-          <mat-select formControlName="role" required>
-            <mat-option value="user">User</mat-option>
-            <mat-option value="admin">Admin</mat-option>
-          </mat-select>
-          <mat-error *ngIf="createUserForm.get('role')?.hasError('required')">
-            Role is required
-          </mat-error>
-        </mat-form-field>
-      </form>
-    </mat-dialog-content>
+      <div class="field">
+        <label for="role">Role *</label>
+        <p-select 
+          formControlName="role" 
+          [options]="roleOptions" 
+          placeholder="Select a role"
+          optionLabel="label" 
+          optionValue="value"
+          styleClass="full-width"
+          [class.ng-invalid]="createUserForm.get('role')?.invalid && createUserForm.get('role')?.touched">
+        </p-select>
+        <small 
+          class="p-error" 
+          *ngIf="createUserForm.get('role')?.hasError('required') && createUserForm.get('role')?.touched">
+          Role is required
+        </small>
+      </div>
 
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="onCancel()">Cancel</button>
-      <button 
-        mat-raised-button 
-        color="primary" 
-        (click)="onCreate()"
-        [disabled]="createUserForm.invalid || isLoading">
-        {{ isLoading ? 'Creating...' : 'Create' }}
-      </button>
-    </mat-dialog-actions>
+      <div class="dialog-actions">
+        <p-button 
+          label="Cancel" 
+          icon="pi pi-times" 
+          styleClass="p-button-text"
+          (onClick)="onCancel()">
+        </p-button>
+        <p-button 
+          type="submit"
+          label="Create User" 
+          icon="pi pi-check" 
+          [disabled]="createUserForm.invalid || isLoading"
+          [loading]="isLoading">
+        </p-button>
+      </div>
+    </form>
   `,
   styles: [`
-    .full-width {
-      width: 100%;
-      margin-bottom: 16px;
+    .field {
+      margin-bottom: 1.5rem;
     }
 
-    mat-dialog-content {
-      min-width: 350px;
+    .field label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .full-width {
+      width: 100%;
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .p-error {
+      display: block;
+      margin-top: 0.25rem;
     }
   `]
 })
 export class CreateUserDialogComponent {
+  @Output() userCreated = new EventEmitter<void>();
+  @Output() dialogClosed = new EventEmitter<void>();
+
   createUserForm: FormGroup;
   isLoading = false;
+  roleOptions = [
+    { label: 'User', value: 'user' },
+    { label: 'Admin', value: 'admin' }
+  ];
 
   constructor(
     private fb: FormBuilder,
     private usersService: UsersService,
-    private dialogRef: MatDialogRef<CreateUserDialogComponent>,
-    private snackBar: MatSnackBar
+    private messageService: MessageService
   ) {
     this.createUserForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -115,8 +171,12 @@ export class CreateUserDialogComponent {
       this.usersService.createUser(userData).subscribe({
         next: (user) => {
           this.isLoading = false;
-          this.snackBar.open('User created successfully!', 'Close', { duration: 3000 });
-          this.dialogRef.close(true);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'User created successfully!'
+          });
+          this.userCreated.emit();
         },
         error: (error) => {
           this.isLoading = false;
@@ -132,7 +192,11 @@ export class CreateUserDialogComponent {
             errorMessage = 'User with this email already exists.';
           }
           
-          this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: errorMessage
+          });
           console.error('Create user error:', error);
         }
       });
@@ -140,6 +204,6 @@ export class CreateUserDialogComponent {
   }
 
   onCancel(): void {
-    this.dialogRef.close(false);
+    this.dialogClosed.emit();
   }
 }
